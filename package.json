@@ -1,0 +1,29 @@
+{
+  "name": "mg.js-guide",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "A task guide for magicgarden.js: building mods on @mg.js/bootstrapped and @mg.js/headless, and shipping them as userscripts.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "serve": "node scripts/serve.mjs",
+    "check:links": "node scripts/check-links.mjs",
+    "check:snippets": "node scripts/check-snippets.mjs",
+    "verify": "npm run check:snippets && npm run build && npm run check:code && npm run check:links",
+    "check:code": "node scripts/check-code-rendering.mjs"
+  },
+  "devDependencies": {
+    "@mg.js/bootstrapped": "^0.1.2",
+    "@mg.js/common": "^0.1.2",
+    "@mg.js/headless": "^0.1.2",
+    "@types/node": "^24.0.0",
+    "lunr": "^2.3.9",
+    "markdown-it": "^14.3.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

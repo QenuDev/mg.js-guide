@@ -1,0 +1,85 @@
+name: pages
+
+# Builds the guide and publishes it to GitHub Pages.
+#
+# The site is static, so the job is a verify and an upload. `SITE_BASE` is set from the repository name
+# because a project page is served from `/<repo>/`, and the built links are absolute: without it every
+# stylesheet, script and search request would 404 on the deployed copy while working locally.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build the site
+        env:
+          SITE_BASE: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - name: Check the links
+        run: npm run check:links
+
+      # The snippet check compiles every TypeScript fence against the real packages, which are not
+      # checked out here. It runs as a second job instead, where that checkout exists.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  snippets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check out the library
+        uses: actions/checkout@v4
+        with:
+          repository: QenuDev/MG.js
+          path: mg.js
+
+      - name: Install the guide
+        run: npm ci
+
+      # The snippet check resolves `@mg.js/*` to `../mg.js/packages`, so it runs against the library
+      # source rather than the published declarations. No library build or install is needed for that:
+      # TypeScript reads the sources directly. When the checkout is absent, the checker falls back to
+      # the installed packages, which is what a standalone clone gets.
+      - name: Typecheck every snippet
+        run: npm run check:snippets
